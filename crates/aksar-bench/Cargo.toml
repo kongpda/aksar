@@ -1,0 +1,21 @@
+[package]
+name = "aksar-bench"
+description = "Khmer OCR benchmark runner (B0): CER, cluster CER and WER per line set and engine"
+version.workspace = true
+edition.workspace = true
+# aksar-ocr (rten) needs Rust 1.94.
+rust-version = "1.94"
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+aksar = { workspace = true, features = ["std", "bundled-dict"] }
+aksar-ocr = { path = "../aksar-ocr", default-features = false, features = ["png"] }
+
+# Peak memory (getrusage).
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+aksar-render = { path = "../aksar-render" }

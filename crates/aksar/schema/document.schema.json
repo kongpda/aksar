@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/khable/aksar/schema/document.schema.json",
+  "title": "aksar Document",
+  "description": "Output of aksar::read::Document::to_json and `aksar read --json`. Version 1: new keys may be added in minor releases, so readers must ignore unknown keys.",
+  "type": "object",
+  "required": ["schema", "pages"],
+  "properties": {
+    "schema": { "const": 1, "description": "Schema version." },
+    "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } }
+  },
+  "$defs": {
+    "page": {
+      "type": "object",
+      "required": ["index", "source", "blocks"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "description": "0-based page number." },
+        "source": { "enum": ["text", "image"], "description": "Where the text came from." },
+        "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+      }
+    },
+    "block": {
+      "type": "object",
+      "required": ["lines"],
+      "properties": {
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/line" } }
+      }
+    },
+    "line": {
+      "type": "object",
+      "required": ["text", "words"],
+      "properties": {
+        "text": { "type": "string", "description": "The line after reading, original whitespace kept." },
+        "words": { "type": "array", "items": { "$ref": "#/$defs/word" } }
+      }
+    },
+    "word": {
+      "type": "object",
+      "required": ["text", "raw", "parts", "suggestions", "unknown_word", "corrected", "number", "latin", "needs_review"],
+      "properties": {
+        "text": { "type": "string", "description": "Final text: repaired, normalized, corrected when sure." },
+        "raw": { "type": "string", "description": "Exactly as given." },
+        "parts": { "type": "array", "items": { "type": "string" }, "description": "Dictionary words inside text." },
+        "suggestions": { "type": "array", "items": { "type": "string" }, "description": "Alternatives for a review screen, best first." },
+        "unknown_word": { "type": "boolean" },
+        "corrected": { "type": "boolean" },
+        "number": { "type": "boolean" },
+        "latin": { "type": "boolean" },
+        "needs_review": { "type": "boolean", "description": "Same as unknown_word." }
+      }
+    }
+  }
+}

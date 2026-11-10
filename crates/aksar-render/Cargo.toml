@@ -1,0 +1,25 @@
+[package]
+name = "aksar-render"
+description = "Draws Khmer text lines as images with exact shaping, for OCR training data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+aksar = { workspace = true, features = ["std", "shape"] }
+skrifa = { version = "0.48", default-features = false, features = ["std"] }
+zeno = { version = "0.3", default-features = false, features = ["eval", "std"] }
+png = { version = "0.18", optional = true }
+
+[dev-dependencies]
+aksar = { workspace = true, features = ["std", "shape", "bundled-dict"] }
+
+[features]
+default = ["png"]
+
+[[example]]
+name = "make_lines"
+required-features = ["png"]

@@ -1,0 +1,23 @@
+[package]
+name = "aksar-cli"
+description = "Command-line tool for aksar: shape, check, normalize, spell-check, split and read Khmer text."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "aksar"
+path = "src/main.rs"
+
+[dependencies]
+aksar = { workspace = true, features = ["std", "shape", "bundled-dict", "read"] }
+# Needs Rust 1.94 (rten); the default build stays on the workspace MSRV.
+aksar-ocr = { path = "../aksar-ocr", optional = true, default-features = false, features = ["png"] }
+aksar-recog = { path = "../aksar-recog", optional = true }
+
+[features]
+# `aksar ocr`: read a PNG with an ONNX line model.
+ocr = ["dep:aksar-ocr", "dep:aksar-recog"]

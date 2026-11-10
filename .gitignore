@@ -1,0 +1,8 @@
+/target
+/pkg
+/.venv
+/venv/
+/data/
+/out/
+__pycache__/
+*.wasm

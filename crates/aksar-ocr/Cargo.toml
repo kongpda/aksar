@@ -1,0 +1,25 @@
+[package]
+name = "aksar-ocr"
+description = "Khmer OCR in one call: image in, checked text out (aksar-image + aksar-recog + aksar)"
+version.workspace = true
+edition.workspace = true
+# rten (through aksar-recog) needs Rust 1.94.
+rust-version = "1.94"
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[features]
+default = ["png"]
+# Decode PNG files (`Ocr::read_png`).
+png = ["dep:png"]
+
+[dependencies]
+aksar = { workspace = true, features = ["std", "read"] }
+aksar-image = { path = "../aksar-image" }
+aksar-recog = { path = "../aksar-recog" }
+png = { version = "0.18", optional = true }
+
+[[example]]
+name = "page_debug"
+required-features = ["png"]

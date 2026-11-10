@@ -1,0 +1,12 @@
+[package]
+name = "aksar-decode"
+description = "CTC decoding constrained by the Khmer syllable grammar and a dictionary"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+aksar = { workspace = true, features = ["std", "bundled-dict"] }

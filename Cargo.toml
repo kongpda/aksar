@@ -1,0 +1,44 @@
+[workspace]
+resolver = "3"
+members = ["crates/aksar", "crates/aksar-bench", "crates/aksar-cli", "crates/aksar-decode", "crates/aksar-image", "crates/aksar-ocr", "crates/aksar-py", "crates/aksar-recog", "crates/aksar-render", "crates/aksar-wasm"]
+# Fuzz targets are their own workspace; see fuzz/README.md.
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kongpda/aksar"
+keywords = ["khmer", "text-shaping", "unicode", "font", "wasm"]
+categories = ["text-processing", "internationalization", "wasm", "no-std"]
+
+[workspace.dependencies]
+aksar = { path = "crates/aksar", version = "0.1.0", default-features = false }
+# Pinned to a minor version: harfrust is pre-1.0 and its API changes between minors.
+harfrust = { version = "0.14", default-features = false }
+
+# Speed first. Measured on the test corpus: opt-level 3 shapes 20-50% faster
+# natively and 2.2x faster in WASM than opt-level "z", for +53 KB gzip.
+# `panic = "abort"` is set only in the WASM profiles: a library must not force it.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+
+# Default WASM build (fast): `cargo build --profile wasm-release`.
+[profile.wasm-release]
+inherits = "release"
+panic = "abort"
+
+# Python wheels (maturin uses it, see crates/aksar-py/pyproject.toml): a fully
+# stripped (even debuginfo-only) extension fails to load on macOS ("mis-aligned LINKEDIT string pool").
+[profile.py-release]
+inherits = "release"
+strip = false
+
+# Smallest WASM build, ~2x slower shaping: `cargo build --profile wasm-small`.
+[profile.wasm-small]
+inherits = "wasm-release"
+opt-level = "z"
