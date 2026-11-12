@@ -1041,7 +1041,10 @@ mod tests {
         let r = go(&["ocr", "--model", "/nonexistent/m.onnx", "--alphabet", "a.json", png]).0;
         assert!(matches!(r, Err(Fail::Run(m)) if m.contains("/nonexistent/m.onnx")));
         let r = go(&["ocr", "--model-dir", "/nonexistent", png]).0;
-        assert!(matches!(r, Err(Fail::Run(m)) if m.contains("/nonexistent/model.onnx")));
+        // The model path is joined to --model-dir, so it uses the platform's separator.
+        let joined = std::path::Path::new("/nonexistent").join("model.onnx");
+        let joined = joined.display().to_string();
+        assert!(matches!(r, Err(Fail::Run(m)) if m.contains(&joined)));
         // The image is read first, so a typo there is reported before any model work.
         let r = go(&["ocr", "--model-dir", "/nonexistent", "/nonexistent/p.png"]).0;
         assert!(matches!(r, Err(Fail::Run(m)) if m.starts_with("/nonexistent/p.png")));
