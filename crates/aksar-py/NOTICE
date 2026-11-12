@@ -1,0 +1,17 @@
+aksar
+Copyright (c) 2026 The aksar authors
+Licensed under MIT OR Apache-2.0.
+
+Third-party material in this repository:
+
+- testdata/fonts/NotoSansKhmer-Regular.ttf
+  Copyright 2022 The Noto Project Authors (https://github.com/notofonts/khmer)
+  SIL Open Font License 1.1 — see testdata/fonts/OFL.txt. Used for tests only.
+
+- The syllable grammar in crates/aksar/src/syllable.rs follows the Khmer
+  syllable machine of HarfBuzz / harfrust (MIT).
+
+- crates/aksar/data/khmer-words.txt is derived from the ICU Khmer word list.
+  Copyright (C) 2016 and later: Unicode, Inc. and others. Unicode License v3 —
+  see crates/aksar/data/khmer-words.LICENSE.txt. Only built in with the
+  `bundled-dict` feature.

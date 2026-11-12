@@ -1,0 +1,5 @@
+# Training only (the Rust crates do not need Python). Tested with Python 3.13 and torch 2.15.
+torch>=2.4
+onnx>=1.16
+pillow>=10
+numpy>=1.26

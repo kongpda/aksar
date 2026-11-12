@@ -1,0 +1,61 @@
+[package]
+name = "aksar"
+description = "Khmer-first text engine in pure Rust: HarfBuzz-exact shaping, syllable validation and normalization, a Khmer dictionary with a conservative OCR corrector, and search tokens."
+readme = "../../README.md"
+# Tests and benches read HarfBuzz golden data from the workspace `testdata/`;
+# the published crate ships the library, the word list and licenses only.
+include = ["src/**", "data/**", "schema/**", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+# The package ships the ICU word list (data/khmer-words.txt) under the Unicode License v3.
+license = "(MIT OR Apache-2.0) AND Unicode-3.0"
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+default = ["std", "shape"]
+# Standard library support. Without it the crate is `no_std` + `alloc`.
+std = ["harfrust?/std"]
+# Font shaping through harfrust. Validation/normalization work without it.
+# Also turns on harfrust's `libm` math fallback: without it read-fonts needs
+# float methods that `core` lacks, so `shape` without `std` would not compile
+# (a `compile_error!` here cannot help: the dependency fails first). With `std`
+# the fallback is unused.
+shape = ["dep:harfrust", "harfrust/libm"]
+# Math fallback needed by harfrust when building without `std` (implied by `shape`).
+libm = ["harfrust?/libm"]
+# Word dictionary + OCR corrector (bring your own word list).
+dict = []
+# Bundles the 80k-word ICU Khmer list (+2 MB, 370 KB gzip).
+bundled-dict = ["dict", "std"]
+# Search index tokens and query building.
+search = []
+# One-call `read::Aksar` (text today; OCR later): bundled dictionary + search.
+read = ["bundled-dict", "search"]
+
+# docs.rs: show every module (dict, search, read are behind features).
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+harfrust = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.8", default-features = false }
+# Validates `Document::to_json` against schema/document.schema.json.
+serde_json = "1"
+
+[[bench]]
+name = "throughput"
+harness = false
+required-features = ["shape"]
+
+[[example]]
+name = "bench_simple"
+required-features = ["shape"]
+
+[[example]]
+name = "dict_prof"
+required-features = ["bundled-dict"]

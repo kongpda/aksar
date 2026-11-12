@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR per ecosystem per week instead of one per dependency.
+    groups:
+      all:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # One PR per ecosystem per week instead of one per dependency.
+    groups:
+      all:
+        patterns: ["*"]
+  # The fuzz targets are their own workspace with their own Cargo.lock.
+  - package-ecosystem: cargo
+    directory: /fuzz
+    schedule:
+      interval: weekly
+    # One PR per ecosystem per week instead of one per dependency.
+    groups:
+      all:
+        patterns: ["*"]

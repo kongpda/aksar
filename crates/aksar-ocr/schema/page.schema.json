@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kongpda/aksar/schema/ocr-page.schema.json",
+  "title": "aksar OCR page",
+  "description": "Output of aksar_ocr::OcrPage::to_json and `aksar ocr --json`. Version 1: new keys may be added in minor releases, so readers must ignore unknown keys.",
+  "type": "object",
+  "required": ["schema", "lines", "document"],
+  "properties": {
+    "schema": { "const": 1, "description": "Schema version of this page format." },
+    "lines": {
+      "type": "array",
+      "description": "Text lines top to bottom, in recognition order.",
+      "items": { "$ref": "#/$defs/line" }
+    },
+    "document": {
+      "$ref": "https://github.com/kongpda/aksar/schema/document.schema.json",
+      "description": "The checked text: the aksar Document (crates/aksar/schema/document.schema.json), with page source \"image\"."
+    }
+  },
+  "$defs": {
+    "line": {
+      "type": "object",
+      "required": ["x", "y", "w", "h", "recognized", "confidence", "alternatives"],
+      "properties": {
+        "x": { "type": "integer", "minimum": 0, "description": "Left edge on the straightened page, in pixels." },
+        "y": { "type": "integer", "minimum": 0, "description": "Top edge on the straightened page, in pixels." },
+        "w": { "type": "integer", "minimum": 0, "description": "Width in pixels." },
+        "h": { "type": "integer", "minimum": 0, "description": "Height in pixels." },
+        "recognized": { "type": "string", "description": "Best reading of the line, before checking." },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "How sure the recognizer is of `recognized`; 0 for a failed or blank line." },
+        "alternatives": { "type": "array", "items": { "type": "string" }, "description": "Other readings, best first." }
+      }
+    }
+  }
+}

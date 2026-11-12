@@ -1,0 +1,198 @@
+name: Release
+
+# Builds Python wheels and the npm WASM package. A tag push only builds and
+# keeps the artifacts. Publishing needs a manual run with `publish` checked.
+# crates.io publishing stays manual (see docs/PLAN.md §6).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to PyPI and npm"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Never two release runs for one tag at once; never cancel one mid-publish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # The full CI suite on the tagged commit. Publishing needs it green.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  wheels:
+    name: wheel ${{ matrix.os }} ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64, test: true }
+          - { os: ubuntu-latest, target: aarch64, test: false }
+          - { os: macos-latest, target: aarch64, test: true }
+          # Cross-built on Apple silicon; the host Python cannot load it.
+          - { os: macos-latest, target: x86_64, test: false }
+          - { os: windows-latest, target: x64, test: true }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # Unstripped `py-release` profile: a stripped extension fails to load on
+      # macOS. Named explicitly because `--release` would override pyproject.toml.
+      - uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --locked --profile py-release --out dist -m crates/aksar-py/Cargo.toml
+      - name: Test the wheel
+        if: matrix.test
+        shell: bash
+        run: |
+          python -m pip install --no-index --find-links dist aksar
+          python -m pip install "pytest==9.2.0"
+          python -m pytest crates/aksar-py/tests
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}
+          path: dist
+
+  sdist:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
+        with:
+          command: sdist
+          args: --out dist -m crates/aksar-py/Cargo.toml
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sdist
+          path: dist
+
+  npm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: "stable"
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      # Default features only (shaping, validation, normalize). `read` adds the
+      # 80k-word dictionary (+370 KB gzip) and stays an opt-in local build.
+      - name: Build
+        run: cargo build --locked -p aksar-wasm --target wasm32-unknown-unknown --profile wasm-release
+      - name: wasm-bindgen
+        run: |
+          # The CLI must match the wasm-bindgen crate version in Cargo.lock exactly.
+          v=$(cargo metadata --format-version 1 | jq -r '.packages[] | select(.name == "wasm-bindgen") | .version')
+          cargo install wasm-bindgen-cli --version "=$v" --locked
+          wasm-bindgen --target web --out-dir pkg target/wasm32-unknown-unknown/wasm-release/aksar_wasm.wasm
+      - name: package.json
+        run: |
+          version=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "aksar-wasm") | .version')
+          cp LICENSE-MIT LICENSE-APACHE NOTICE crates/aksar-wasm/README.md pkg/
+          jq -n --arg v "$version" '{
+            name: "aksar-wasm",
+            version: $v,
+            description: "Khmer text in WebAssembly: HarfBuzz-exact shaping, validation and normalization (aksar)",
+            license: "MIT OR Apache-2.0",
+            repository: { type: "git", url: "git+https://github.com/kongpda/aksar.git" },
+            keywords: ["khmer", "unicode", "text-shaping", "wasm"],
+            type: "module",
+            main: "aksar_wasm.js",
+            types: "aksar_wasm.d.ts",
+            sideEffects: ["./snippets/*"],
+            files: ["aksar_wasm_bg.wasm", "aksar_wasm.js", "aksar_wasm.d.ts", "aksar_wasm_bg.wasm.d.ts", "README.md", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE"]
+          }' > pkg/package.json
+      - name: Check package contents
+        working-directory: pkg
+        run: npm pack --dry-run
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-pkg
+          path: pkg
+
+  # Publishing needs a tag that matches the workspace version and is on main.
+  check-tag:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: |
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "tag $GITHUB_REF_NAME does not match Cargo.toml version $version" >&2
+            exit 1
+          fi
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "tag $GITHUB_REF_NAME is not on main" >&2
+            exit 1
+          }
+
+  publish-pypi:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && startsWith(github.ref, 'refs/tags/v')
+    needs: [ci, check-tag, wheels, sdist]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: "{wheels-*,sdist}"
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
+
+  publish-npm:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && startsWith(github.ref, 'refs/tags/v')
+    needs: [ci, check-tag, npm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-pkg
+          path: pkg
+      # npm trusted publishing (OIDC, needs npm >= 11.5.1): no long-lived token to leak.
+      # Set it up once on npmjs.com: package aksar-wasm, repo kongpda/aksar,
+      # workflow release.yml, environment npm.
+      - run: npm install -g npm@11
+      - working-directory: pkg
+        run: npm publish --provenance --access public

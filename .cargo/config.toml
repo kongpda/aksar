@@ -1,0 +1,6 @@
+# Shortcuts for working in this repository (they do not affect users of the crates).
+[alias]
+# Run the CLI from source: `cargo aksar check "កា្រ"`.
+aksar = "run -q -p aksar-cli --"
+# Run the CLI with OCR (Rust 1.94+): `cargo aksar-ocr ocr --model m.onnx --alphabet a.json page.png`.
+aksar-ocr = "run -q -p aksar-cli --features ocr --"

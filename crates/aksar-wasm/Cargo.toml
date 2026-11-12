@@ -1,0 +1,23 @@
+[package]
+name = "aksar-wasm"
+description = "WebAssembly bindings for aksar (Khmer shaping, validation, normalization)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["shape"]
+# Turn off to get a tiny validate/normalize-only module.
+shape = ["aksar/shape"]
+# One-call `read` (bundles the 80k-word dictionary: about +370 KB gzip).
+read = ["aksar/read"]
+
+[dependencies]
+aksar = { workspace = true, features = ["std"] }
+wasm-bindgen = "0.2"

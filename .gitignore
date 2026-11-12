@@ -1,0 +1,11 @@
+/target
+/pkg
+/.venv
+/venv/
+/data/
+/out/
+__pycache__/
+*.wasm
+# maturin develop puts the built module next to the Python sources.
+/crates/aksar-py/python/aksar/*.so
+/crates/aksar-py/python/aksar/*.pyd

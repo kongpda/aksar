@@ -1,0 +1,34 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "aksar"
+description = "Khmer text engine: normalize, validate, spell-check, segment and search Khmer text"
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "(MIT OR Apache-2.0) AND Unicode-3.0" }
+license-files = ["LICENSE-MIT", "LICENSE-APACHE", "NOTICE", "khmer-words.LICENSE.txt"]
+keywords = ["khmer", "unicode", "text", "ocr", "spelling"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: Khmer",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/kongpda/aksar"
+Changelog = "https://github.com/kongpda/aksar/blob/main/CHANGELOG.md"
+
+[tool.maturin]
+# Mixed layout: the stubs and py.typed in python/aksar ship in every wheel,
+# including one built from the sdist.
+python-source = "python"
+module-name = "aksar.aksar"
+profile = "py-release"
+features = ["pyo3/extension-module"]

@@ -1,0 +1,20 @@
+[package]
+name = "aksar-recog"
+description = "Khmer line recognizer: a small CTC model run with rten, decoded by aksar-decode"
+version.workspace = true
+edition.workspace = true
+# rten 0.27 needs Rust 1.94; the text crates keep the workspace MSRV.
+rust-version = "1.94"
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+aksar-decode = { path = "../aksar-decode" }
+aksar-image = { path = "../aksar-image" }
+rten = { version = "0.27", default-features = false, features = ["onnx_format"] }
+rten-tensor = "0.27"
+
+[dev-dependencies]
+aksar = { workspace = true, features = ["std"] }
+png = "0.18"

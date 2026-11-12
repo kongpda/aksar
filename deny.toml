@@ -1,0 +1,16 @@
+# cargo deny check — keeps the dependency tree commercial-friendly.
+# Only licenses in use today are listed; a new one is a deliberate change here.
+[licenses]
+allow = ["MIT", "Apache-2.0", "Zlib", "Unicode-3.0", "Apache-2.0 WITH LLVM-exception"]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+
+[advisories]
+yanked = "deny"
+
+[sources]
+# Only crates.io: a git or other-registry dependency must be a deliberate change here.
+unknown-registry = "deny"
+unknown-git = "deny"

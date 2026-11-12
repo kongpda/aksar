@@ -1,0 +1,45 @@
+[package]
+name = "aksar-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+aksar = { path = "../crates/aksar", features = ["read"] }
+aksar-image = { path = "../crates/aksar-image" }
+
+# Not part of the root workspace: running the targets needs nightly.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "syllable"
+path = "fuzz_targets/syllable.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "dict"
+path = "fuzz_targets/dict.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "shape"
+path = "fuzz_targets/shape.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "image"
+path = "fuzz_targets/image.rs"
+test = false
+doc = false
+bench = false
