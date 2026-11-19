@@ -16,7 +16,7 @@ categories = ["text-processing", "internationalization", "wasm", "no-std"]
 [workspace.dependencies]
 aksar = { path = "crates/aksar", version = "0.1.1", default-features = false }
 # Pinned to a minor version: harfrust is pre-1.0 and its API changes between minors.
-harfrust = { version = "0.15", default-features = false }
+harfrust = { version = "0.16", default-features = false }
 
 # Speed first. Measured on the test corpus: opt-level 3 shapes 20-50% faster
 # natively and 2.2x faster in WASM than opt-level "z", for +53 KB gzip.
